@@ -26,7 +26,11 @@ var svg = d3
 
 //Setting radius for each dot that will appear in teh graph
 var circRadius;
-function crGet() {
+
+/**
+* Set Y Axis Min Max Ranges
+*/
+function setCircleRadius() {
   if (width <= 530) {
     circRadius = 5;
   }
@@ -34,7 +38,7 @@ function crGet() {
     circRadius = 10;
   }
 }
-crGet();
+setCircleRadius();
 
 //Group element to net bottom axes labels
 svg.append("g").attr("class", "xText");
@@ -42,7 +46,10 @@ svg.append("g").attr("class", "xText");
 //xText will allow us to select the group without excess code
 var xText = d3.select(".xText");
 
-//provide xText property and add to the bottom of the chart
+/**
+* Refresh X Axis text
+*/
+//
 function xTextRefresh() {
   xText.attr(
     "transform",
@@ -56,6 +63,7 @@ function xTextRefresh() {
 
 xTextRefresh();
 
+//X Axis text, and active/inactive class designations
 xText
   .append("text")
   .attr("y", -26)
@@ -89,6 +97,10 @@ svg.append("g").attr("class", "yText");
 
 var yText = d3.select(".yText");
 
+/**
+* Refresh Y Axis text
+*/
+//
 function yTextRefresh() {
   yText.attr(
     "transform",
@@ -97,7 +109,7 @@ function yTextRefresh() {
 }
 yTextRefresh();
 
-//Add text to y Axis
+//Y Axis text, and active/inactive class designations
 yText
   .append("text")
   .attr("y", -26)
@@ -127,8 +139,12 @@ d3.csv("assets/data/data.csv").then(function(data) {
   visualize(data);
 });
 
+/**
+* Main function that executes the chart
+*/
 function visualize(theData) {
 
+  //current X/Y axis on load
   var curX = "poverty";
   var curY = "obesity";
 
@@ -137,6 +153,7 @@ function visualize(theData) {
   var yMin;
   var yMax;
   
+  //Tooltop initialization
   var toolTip = d3
     .tip()
     .attr("class", "d3-tip")
@@ -159,17 +176,24 @@ function visualize(theData) {
     });
     svg.call(toolTip);
 
-  function xMinMax() {
+  /**
+  * Set x Axis Min Max Ranges
+  */
+  function setXMinMax() {
     xMin = d3.min(theData, function(d) {
       return parseFloat(d[curX]) * .90;
     });
+
 
     xMax = d3.max(theData, function(d) {
       return parseFloat(d[curX]) * 1.10;
     });
   }
 
-  function yMinMax() {
+  /**
+  * Set Y Axis Min Max Ranges
+  */
+  function setYMinMax() {
     yMin = d3.min(theData, function(d) {
       return parseFloat(d[curY]) * 0.90;
     });
@@ -179,7 +203,12 @@ function visualize(theData) {
     });
   }
 
-  function labelChange(axis, clickedText) {
+  /**
+   * Set Labels
+   * @param {object} axis: label change for given axis
+   * @param {object} clickedText: selected Text for label - used to set class property inactive/active
+   */
+  function setLabels(axis, clickedText) {
     d3
       .selectAll(".aText")
       .filter("." + axis)
@@ -190,8 +219,8 @@ function visualize(theData) {
     clickedText.classed("inactive", false).classed("active", true);
   }
 
-  xMinMax();
-  yMinMax();
+  setXMinMax();
+  setYMinMax();
 
   var xScale = d3
     .scaleLinear()
@@ -206,7 +235,10 @@ function visualize(theData) {
   var xAxis = d3.axisBottom(xScale);
   var yAxis = d3.axisLeft(yScale);
 
-  function tickCount() {
+  /**
+   * Set Tick Counts depending on screen width
+   */
+  function setTicks() {
     if (width <= 500) {
       xAxis.ticks(5);
       yAxis.ticks(5);
@@ -216,20 +248,23 @@ function visualize(theData) {
       yAxis.ticks(10);
     }
   }
-  tickCount();
+  setTicks();
 
+  // Append x Axis to the SVG element
   svg
     .append("g")
     .call(xAxis)
     .attr("class", "xAxis")
     .attr("transform", "translate(0," + (height - margin - labelArea) + ")");
-
+  
+  // Append y Axis to the SVG element
   svg
     .append("g")
     .call(yAxis)
     .attr("class", "yAxis")
     .attr("transform", "translate(" + (margin + labelArea) + ", 0)");
 
+  //Set circles scale and evets
   var theCircles = svg.selectAll("g theCircles").data(theData).enter();
   theCircles
     .append("circle")
@@ -252,6 +287,7 @@ function visualize(theData) {
       d3.select(this).style("stroke", "#e3e3e3");
     });
 
+  //Set circles text from given dataset with events
   theCircles
     .append("text")
     .text(function(d) {
@@ -275,6 +311,9 @@ function visualize(theData) {
     });
 
 
+  //Event handler for when either the x Axis or y Axis is clicked
+  //Axis styles will change, x and y data sets will change which will set
+  //the locations and text of the circles
   d3.selectAll(".aText").on("click", function () {
 
     var self = d3.select(this);
@@ -284,7 +323,7 @@ function visualize(theData) {
       
       if(axis === "x") {
         curX = name;
-        xMinMax();
+        setXMinMax();
         xScale.domain([xMin, xMax]);
 
         svg.select(".xAxis").transition().duration(300).call(xAxis);
@@ -308,11 +347,11 @@ function visualize(theData) {
             })
             .duration(300);
         });
-        labelChange(axis, self);
+        setLabels(axis, self);
       }
       else {
         curY = name;
-        yMinMax();
+        setYMinMax();
         yScale.domain([yMin, yMax]);
         svg.select(".yAxis").transition().duration(300).call(yAxis);
 
@@ -334,22 +373,27 @@ function visualize(theData) {
             })
             .duration(300);
         });
-        labelChange(axis, self);
+        setLabels(axis, self);
       }
     }
   });
 
+  //Event handler for when the browser window is resized
   d3.select(window).on("resize", resize);
   function resize() {
+    //get width and height of the new window size
     width = parseInt(d3.select("#scatter").style("width"));
     height = width - width / 3.9;
     leftTextY = (height + labelArea) / 2 - labelArea;
 
+    //update the width and height of the chart
     svg.attr("width", width).attr("height", height);
 
+    //update the ranges for both axis
     xScale.range([margin + labelArea, width - margin]);
     yScale.range([height - margin - labelArea, margin]);
 
+    //set the new axis to the svg chart
     svg
       .select(".xAxis")
       .call(xAxis)
@@ -357,12 +401,13 @@ function visualize(theData) {
     
     svg.select(".yAxis").call(yAxis);
 
-    tickCount();
-
+    //Update ticks and refresh the axis text
+    setTicks();
     xTextRefresh();
     yTextRefresh();
 
-    crGet();
+    //update the new radius of the circles depending on browser size
+    setCircleRadius();
 
     d3
       .selectAll("circle")
