@@ -261,7 +261,7 @@ function visualize(theData) {
       return xScale(d[curX]);
     })
     .attr("dy", function(d) {
-      return yScale(d[curY] + circRadius / 2.5);
+      return yScale(d[curY]-0.2);
     })
     .attr("font-size", circRadius)
     .attr("class", "stateText")
